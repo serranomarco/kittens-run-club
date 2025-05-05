@@ -9,7 +9,21 @@ const get = async (
         headers: headers || {},
     }
 
-    console.log(process.env)
+    const response = await fetch(`${url}${path}`, options)
+    return handleResponse(response)
+}
+
+const post = async (
+    url: string,
+    path: string,
+    headers: Record<string, string>,
+    body: string
+): Promise<unknown> => {
+    const options: RequestInit = {
+        method: 'POST',
+        headers: headers,
+        body: body,
+    }
 
     const response = await fetch(`${url}${path}`, options)
     return handleResponse(response)
@@ -26,6 +40,7 @@ const handleResponse = async (response: Response): Promise<unknown> => {
 
 export const fetchWrapper = {
     get,
+    post,
 }
 
 export default fetchWrapper
