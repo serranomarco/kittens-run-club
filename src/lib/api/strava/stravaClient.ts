@@ -1,12 +1,21 @@
-import { fetchWrapper } from '@/src/app/lib/api/fetchWrapper'
-import { Athlete, StravaAccessToken } from './interface'
+import { fetchWrapper } from '../fetchWrapper'
+import {
+    Athlete,
+    AthleteRun,
+    StravaAccessToken,
+    StravaAPIResponseActivity,
+    StravaAPIResponseAuthenticatedAthlete,
+} from './interface'
+import { stravaResponseProcessor } from './stravaResponseProcessor'
 
 const BASE_URL = `https://${process.env.NEXT_PUBLIC_STRAVA_API_URL}`
 const OAUTH_URL = `https://${process.env.NEXT_PUBLIC_STRAVA_OAUTH_URL}`
 const REDIRECT_URI = process.env.NEXT_PUBLIC_STRAVA_REDIRECT_URI
 const CLIENT_ID = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID
+const SCOPE = 'activity:read_all'
 
 export const stravaClient = () => {
+    const processor = stravaResponseProcessor()
     // After OAuth authentication process is complete save access token in local storage
     // TODO: Add support for OAuth authentication
     const getAccessToken = () => {
@@ -22,15 +31,26 @@ export const stravaClient = () => {
     }
 
     const getAthlete = async (): Promise<Athlete> => {
-        return (await fetchWrapper.get(
+        const response = (await fetchWrapper.get(
             BASE_URL,
             '/athlete',
             authHeaders
-        )) as Athlete
+        )) as StravaAPIResponseAuthenticatedAthlete
+        return processor.processAthlete(response)
+    }
+
+    const getActivities = async (): Promise<AthleteRun[]> => {
+        const response = (await fetchWrapper.get(
+            BASE_URL,
+            '/athlete/activities?per_page=15',
+            authHeaders
+        )) as StravaAPIResponseActivity[]
+
+        return processor.processActivities(response)
     }
 
     const redirectToOAuthPage = () => {
-        window.location.href = `${OAUTH_URL}?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&approval_prompt=force&scope=read`
+        window.location.href = `${OAUTH_URL}?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&approval_prompt=force&scope=${SCOPE}`
     }
 
     const refreshAccessToken = async () => {
@@ -59,6 +79,7 @@ export const stravaClient = () => {
     // TODO: Add Activities and some way to process strava response data (function here or seperate helper?)
     return {
         getAthlete,
+        getActivities,
         redirectToOAuthPage,
         refreshAccessToken,
     }
