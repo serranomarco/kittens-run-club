@@ -8,6 +8,7 @@ const get = async (
         method: 'GET',
         headers: headers || {},
     }
+    console.log(options)
 
     const response = await fetch(`${url}${path}`, options)
     return handleResponse(response)
